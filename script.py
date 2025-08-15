@@ -82,16 +82,18 @@ def redimensionar_multiplas_imagens(pasta_entrada, pasta_saida, largura, altura)
     for arquivo in os.listdir(pasta_entrada):
         if arquivo.lower().endswith(extensoes_validas):
             caminho_entrada = os.path.join(pasta_entrada, arquivo)
-            caminho_saida = os.path.join(pasta_saida, f"redimensionada_{arquivo}")
+            caminho_saida = os.path.join(pasta_saida, f"{arquivo}")
             
             print(f"\nProcessando: {arquivo}")
             redimensionar_imagem(caminho_entrada, caminho_saida, largura, altura)
 
 #%%
 ### Primeira etapa: redimensionar imagens
-#%%
-redimensionar_multiplas_imagens('imagens_entrada', 'imagens_saida', 80, 80)
-
+# 
+state_farm_train = 'datasets/State_farm/imgs/train'
+state_farm_test = 'datasets/State_farm/imgs/test'
+redimensionar_multiplas_imagens(pasta_entrada=state_farm_train , pasta_saida=f'{state_farm_train}/redimensionada', largura=80, altura=80)
+redimensionar_multiplas_imagens(pasta_entrada=state_farm_test , pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
 #%%
 ### Segunda etapa: detectar faces e olhos
 #%%
@@ -247,6 +249,47 @@ class HCC:
             print(f"Erro durante a detecção: {e}")
             return 0, 0, None
         
+
+def enhance(image_path, output_folder):
+    """Recebe uma pasta para fazer a detecção de faces e olhos
+
+    Args:
+        image_path (string): path to image folder
+        output_folder (string): path to save processed images
+
+    Raises:
+        ValueError: _description_
+        ValueError: _description_
+
+    Returns:
+        output_folder: path to processed images
+    """
+    detector = HCC
+    # Criar pasta de saída se não existir
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    # Extensões de imagem suportadas
+    extensoes_validas = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')
+    
+    # Processar cada arquivo na pasta
+    for arquivo in os.listdir(image_path):
+        if arquivo.lower().endswith(extensoes_validas):
+            caminho_entrada = os.path.join(image_path, arquivo)
+            caminho_saida = os.path.join(output_folder, f"{arquivo}")
+            
+            print(f"\nProcessando: {arquivo}")
+            detector.detectar_faces_olhos(imagem_path=caminho_entrada, salvar_resultado=True, mostrar_imagem=False)
+    return caminho_saida
+#%%
+
+state_farm_train = 'datasets/State_farm/imgs/train/redimensionada'
+state_farm_test = 'datasets/State_farm/imgs/test/redimensionada'
+state_farm_train = enhance(state_farm_train, f'{state_farm_train}/enhanced')
+state_farm_test = enhance(state_farm_test, f'{state_farm_test}/enhanced')
+
+
+
 #%%
 ### terceira etapa: preprocessar as regiões de interesse
 #%%
@@ -359,7 +402,7 @@ class preprocessamento_img:
                                 beta: int = 10,
                                 tipo_sharpening: str = 'basico',
                                 intensidade_sharpening: float = 1.0,
-                                usar_unsharp: bool = False,
+                                usar_unsharp: bool = True,
                                 sigma_unsharp: float = 1.0,
                                 strength_unsharp: float = 1.5) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -495,6 +538,46 @@ class preprocessamento_img:
                     print(f"✓ {arquivo} → {nome_saida}")
         
         print(f"\nProcessamento concluído: {arquivos_processados} imagens melhoradas")
+#%%
+def aplicar_sharpening(image_path, output_folder):
+    """Aplica filtro sharpening usando unsharp_mask em lote
+
+    Args:
+        image_path (string): image folder path
+        output_folder (string): output folder path
+
+    Returns:
+        output_path: image output path
+    """
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    # Extensões de imagem suportadas
+    extensoes_validas = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')
+    
+    # Processar cada arquivo na pasta
+    for arquivo in os.listdir(image_path):
+        if arquivo.lower().endswith(extensoes_validas):
+            caminho_entrada = os.path.join(image_path, arquivo)
+            caminho_saida = os.path.join(output_folder, f"{arquivo}")
+            
+            print(f"\nProcessando: {arquivo}")
+            melhorada = preprocessamento_img.sharpening_unsharp_mask(caminho_entrada)
+            if melhorada is not None:
+                    # Salvar imagem melhorada
+                    nome_saida = f"{arquivo}"
+                    caminho_saida = os.path.join(caminho_saida, nome_saida)
+                    cv2.imwrite(caminho_saida, melhorada)
+                    
+                    arquivos_processados += 1
+                    print(f"✓ {arquivo} → {nome_saida}")
+    return output_folder
+
+
+state_farm_train = aplicar_sharpening(state_farm_train, f'{state_farm_train}/processed')
+state_farm_test = aplicar_sharpening(state_farm_test, f'{state_farm_test}/processed')
+
+
 #%%
 ### Modelo 
 #%%
