@@ -10,7 +10,7 @@ from tensorflow import keras
 
 
 # %%
-def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altura, manter_proporcao=True):
+def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altura, manter_proporcao=False):
     """
     Redimensiona uma imagem usando OpenCV
     
@@ -91,9 +91,12 @@ def redimensionar_multiplas_imagens(pasta_entrada, pasta_saida, largura, altura)
 ### Primeira etapa: redimensionar imagens
 # 
 state_farm_train = 'datasets/State_farm/imgs/train'
+pastas = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
+for i in pastas:
+    redimensionar_multiplas_imagens(pasta_entrada=f'{state_farm_train}/{i}', pasta_saida=f'{state_farm_train}/redimensionada/{i}', largura=80, altura=80)
+#%%
 state_farm_test = 'datasets/State_farm/imgs/test'
-redimensionar_multiplas_imagens(pasta_entrada=state_farm_train , pasta_saida=f'{state_farm_train}/redimensionada', largura=80, altura=80)
-redimensionar_multiplas_imagens(pasta_entrada=state_farm_test , pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
+redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
 #%%
 ### Segunda etapa: detectar faces e olhos
 #%%
@@ -121,7 +124,7 @@ class HCC:
             print(f"Erro ao inicializar detectores: {e}")
             sys.exit(1)
     
-    def detectar_faces_olhos(self, imagem_path, salvar_resultado=True, mostrar_imagem=True):
+    def detectar_faces_olhos(self, imagem_path, output_folder, salvar_resultado=True, mostrar_imagem=True):
         """
         Detecta faces e olhos em uma imagem
         
@@ -222,7 +225,7 @@ class HCC:
             if salvar_resultado:
                 nome_base = os.path.splitext(imagem_path)[0]
                 extensao = os.path.splitext(imagem_path)[1]
-                caminho_saida = f"{nome_base}_detectado{extensao}"
+                caminho_saida = f"{output_folder}/{nome_base}_detectado{extensao}"
                 cv2.imwrite(caminho_saida, img)
                 print(f"Imagem com detecções salva em: {caminho_saida}")
             
@@ -264,7 +267,7 @@ def enhance(image_path, output_folder):
     Returns:
         output_folder: path to processed images
     """
-    detector = HCC
+    detector = HCC()
     # Criar pasta de saída se não existir
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -279,15 +282,18 @@ def enhance(image_path, output_folder):
             caminho_saida = os.path.join(output_folder, f"{arquivo}")
             
             print(f"\nProcessando: {arquivo}")
-            detector.detectar_faces_olhos(imagem_path=caminho_entrada, salvar_resultado=True, mostrar_imagem=False)
+            detector.detectar_faces_olhos(imagem_path=caminho_entrada, output_folder=caminho_saida, salvar_resultado=True, mostrar_imagem=False)
     return caminho_saida
 #%%
 
 state_farm_train = 'datasets/State_farm/imgs/train/redimensionada'
 state_farm_test = 'datasets/State_farm/imgs/test/redimensionada'
-state_farm_train = enhance(state_farm_train, f'{state_farm_train}/enhanced')
+#%%
+for i in pastas:
+    state_farm_train = enhance(f'{state_farm_train}/{i}', f'{state_farm_train}/enhanced/{i}')
+                               
+#%%
 state_farm_test = enhance(state_farm_test, f'{state_farm_test}/enhanced')
-
 
 
 #%%
