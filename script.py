@@ -19,7 +19,7 @@ def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altu
         caminho_saida (str): Caminho onde salvar a imagem redimensionada
         nova_largura (int): Nova largura desejada
         nova_altura (int): Nova altura desejada
-    
+    Não cheguei 
     Returns:
         bool: True se sucesso, False se erro
     """
@@ -83,16 +83,16 @@ def redimensionar_multiplas_imagens(pasta_entrada, pasta_saida, largura, altura)
 ### Primeira etapa: redimensionar imagens
 #%%
 state_farm_train = 'datasets/State_farm/imgs/train'
+#%%
 pastas = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
+#%%
 for i in pastas:
     redimensionar_multiplas_imagens(pasta_entrada=f'{state_farm_train}/{i}', pasta_saida=f'{state_farm_train}/redimensionada/{i}', largura=80, altura=80)
 #%%
 state_farm_test = 'datasets/State_farm/imgs/test'
-redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
-
-### Segunda etapa: detectar faces e olhos
 #%%
-img_test = state_farm_test + '/redimensionada/img_1.jpg'
+redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
+### Segunda etapa: detectar faces e olhos
 #%%
 class HCC:
     def __init__(self):
@@ -127,94 +127,68 @@ class HCC:
             print(f"Erro ao inicializar detectores: {e}")
             sys.exit(1)
     
-    def detectar_faces_olhos(self, imagem_path, output_folder, salvar_resultado=True, mostrar_imagem=True):
-        """
-        Detecta faces e olhos em uma imagem
-        
-        Args:
-            imagem_path (str): Caminho para a imagem
-            salvar_resultado (bool): Se True, salva a imagem com detecções
-            mostrar_imagem (bool): Se True, exibe a imagem na tela
-            
-        Returns:
-            tuple: (numero_faces, numero_olhos, imagem_processada)
-        """
+    def detectar_faces_olhos(self, imagem_path, output_folder, salvar_resultado=True):
         try:
-            # Carregar a imagem
             img = cv2.imread(imagem_path)
             if img is None:
                 print(f"Erro: Não foi possível carregar a imagem {imagem_path}")
                 return 0, 0, None
-            
-            # Converter para escala de cinza (necessário para Haar Cascade)
+
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            
-            # Detectar faces // como usar multiplos classificadores?
-            faces = self.face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.1,    # Redução da escala a cada iteração
-                minNeighbors=5,     # Mínimo de vizinhos para considerar uma detecção
-                minSize=(30, 30),   # Tamanho mínimo da face
-                flags=cv2.CASCADE_SCALE_IMAGE
-            )
-            
+
+            # Detectores de face
+            face_detections = []
+            for face_cascade in [self.face_cascade1, self.face_cascade2, self.face_cascade3, self.face_cascade4]:
+                faces = face_cascade.detectMultiScale(
+                    gray,
+                    scaleFactor=1.05,
+                    minNeighbors=2,
+                    minSize=(10, 10),
+                    flags=cv2.CASCADE_SCALE_IMAGE
+                )
+                face_detections.extend(faces)
+
+            # Eliminar sobreposições usando groupRectangles (requer lista com pelo menos dois itens iguais)
+            faces_filtered, _ = cv2.groupRectangles(face_detections * 2, groupThreshold=1, eps=0.2)
+
             total_olhos = 0
-            
-            print(f"Faces detectadas: {len(faces)}")
-            
-            # Processar cada face detectada
-            for i, (x, y, w, h) in enumerate(faces):
-                # Desenhar retângulo ao redor da face
+            print(f"Faces detectadas (após filtragem): {len(faces_filtered)}")
+
+            for i, (x, y, w, h) in enumerate(faces_filtered):
                 cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                
-                # Região de interesse (ROI) para buscar olhos apenas dentro da face
+
                 roi_gray = gray[y:y+h, x:x+w]
                 roi_color = img[y:y+h, x:x+w]
-                
-                # Detectar olhos dentro da face // como usar multiplos classificadores?
-                eyes = self.eye_cascade.detectMultiScale(
-                    roi_gray,
-                    scaleFactor=1.1,
-                    minNeighbors=5,
-                    minSize=(10, 10)
-                )
-                
-                print(f"  Olhos detectados na face {i+1}: {len(eyes)}")
-                
-                # Desenhar retângulos ao redor dos olhos
-                for (ex, ey, ew, eh) in eyes:
+
+                # Detectores de olhos
+                eye_detections = []
+                for eye_cascade in [self.eye_cascade1, self.eye_cascade2]:
+                    eyes = eye_cascade.detectMultiScale(
+                        roi_gray,
+                        scaleFactor=1.05,
+                        minNeighbors=2,
+                        minSize=(10, 10)
+                    )
+                    eye_detections.extend(eyes)
+
+                # Remover sobreposição entre olhos detectados
+                eyes_filtered, _ = cv2.groupRectangles(eye_detections * 2, groupThreshold=1, eps=0.2)
+                print(f"  Olhos detectados na face {i+1}: {len(eyes_filtered)}")
+
+                for (ex, ey, ew, eh) in eyes_filtered:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
-                
-                total_olhos += len(eyes)
-                
-            
-            # Salvar resultado se solicitado
+
+                total_olhos += len(eyes_filtered)
+
             if salvar_resultado:
-                nome_base = os.path.splitext(imagem_path)[0]
+                nome_base = os.path.splitext(os.path.basename(imagem_path))[0]
                 extensao = os.path.splitext(imagem_path)[1]
-                caminho_saida = f"{output_folder}/{nome_base}_detectado{extensao}"
+                caminho_saida = os.path.join(output_folder, f"{nome_base}_detectado{extensao}")
                 cv2.imwrite(caminho_saida, img)
                 print(f"Imagem com detecções salva em: {caminho_saida}")
-            
-            # Mostrar imagem se solicitado
-            if mostrar_imagem:
-                # Redimensionar se a imagem for muito grande
-                altura, largura = img.shape[:2]
-                if largura > 800 or altura > 600:
-                    ratio = min(800/largura, 600/altura)
-                    nova_largura = int(largura * ratio)
-                    nova_altura = int(altura * ratio)
-                    img_display = cv2.resize(img, (nova_largura, nova_altura))
-                else:
-                    img_display = img
-                
-                cv2.imshow('Detecção de Faces e Olhos', img_display)
-                print("Pressione qualquer tecla para fechar a janela...")
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
-            
-            return len(faces), total_olhos, img
-            
+
+            return len(faces_filtered), total_olhos, img
+
         except Exception as e:
             print(f"Erro durante a detecção: {e}")
             return 0, 0, None
@@ -246,23 +220,25 @@ def enhance(image_path, output_folder):
     for arquivo in os.listdir(image_path):
         if arquivo.lower().endswith(extensoes_validas):
             caminho_entrada = os.path.join(image_path, arquivo)
-            caminho_saida = os.path.join(output_folder, f"{arquivo}")
+            caminho_saida = output_folder
             
             print(f"\nProcessando: {arquivo}")
-            detector.detectar_faces_olhos(imagem_path=caminho_entrada, output_folder=caminho_saida, salvar_resultado=True, mostrar_imagem=False)
+            detector.detectar_faces_olhos(imagem_path=caminho_entrada, output_folder=caminho_saida, salvar_resultado=True)
     return caminho_saida
+# #%%
+# img_test = state_farm_test + '/redimensionada/img_1.jpg'
+# #%%
+# HCC().detectar_faces_olhos(imagem_path=img_test, output_folder='./')
 #%%
-
 state_farm_train = 'datasets/State_farm/imgs/train/redimensionada'
 state_farm_test = 'datasets/State_farm/imgs/test/redimensionada'
 #%%
 for i in pastas:
-    state_farm_train = enhance(f'{state_farm_train}/{i}', f'{state_farm_train}/enhanced/{i}')
-                               
+    enhance(f'{state_farm_train}/{i}', f'{state_farm_train}/enhanced/{i}')
+state_farm_train = f'{state_farm_train}/enhanced/'                               
 #%%
-state_farm_test = enhance(state_farm_test, f'{state_farm_test}/enhanced')
-
-
+enhance(state_farm_test, f'{state_farm_test}/enhanced')
+state_farm_test = f'{state_farm_test}/enhanced/'
 #%%
 ### terceira etapa: preprocessar as regiões de interesse
 #%%
@@ -512,44 +488,13 @@ class preprocessamento_img:
         
         print(f"\nProcessamento concluído: {arquivos_processados} imagens melhoradas")
 #%%
-def aplicar_sharpening(image_path, output_folder):
-    """Aplica filtro sharpening usando unsharp_mask em lote
+for i in pastas:
+    preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=f'{state_farm_train}/{i}', pasta_saida=f'{state_farm_train}/processed/{i}')
 
-    Args:
-        image_path (string): image folder path
-        output_folder (string): output folder path
-
-    Returns:
-        output_path: image output path
-    """
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    
-    # Extensões de imagem suportadas
-    extensoes_validas = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')
-    
-    # Processar cada arquivo na pasta
-    for arquivo in os.listdir(image_path):
-        if arquivo.lower().endswith(extensoes_validas):
-            caminho_entrada = os.path.join(image_path, arquivo)
-            caminho_saida = os.path.join(output_folder, f"{arquivo}")
-            
-            print(f"\nProcessando: {arquivo}")
-            melhorada = preprocessamento_img.sharpening_unsharp_mask(caminho_entrada)
-            if melhorada is not None:
-                    # Salvar imagem melhorada
-                    nome_saida = f"{arquivo}"
-                    caminho_saida = os.path.join(caminho_saida, nome_saida)
-                    cv2.imwrite(caminho_saida, melhorada)
-                    
-                    arquivos_processados += 1
-                    print(f"✓ {arquivo} → {nome_saida}")
-    return output_folder
-
-
-state_farm_train = aplicar_sharpening(state_farm_train, f'{state_farm_train}/processed')
-state_farm_test = aplicar_sharpening(state_farm_test, f'{state_farm_test}/processed')
-
+state_farm_train = f'{state_farm_train}/processed'
+#%%
+preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=state_farm_test, pasta_saida=f'{state_farm_test}/processed')
+state_farm_test = f'{state_farm_test}/processed'
 
 #%%
 ### Modelo 
