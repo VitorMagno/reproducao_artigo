@@ -235,10 +235,10 @@ state_farm_test = 'datasets/State_farm/imgs/test/redimensionada'
 #%%
 for i in pastas:
     enhance(f'{state_farm_train}/{i}', f'{state_farm_train}/enhanced/{i}')
-state_farm_train = f'{state_farm_train}/enhanced/'                               
+state_farm_train = f'{state_farm_train}/enhanced'                               
 #%%
 enhance(state_farm_test, f'{state_farm_test}/enhanced')
-state_farm_test = f'{state_farm_test}/enhanced/'
+state_farm_test = f'{state_farm_test}/enhanced'
 #%%
 ### terceira etapa: preprocessar as regiões de interesse
 #%%
