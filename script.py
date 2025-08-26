@@ -10,7 +10,7 @@ from tensorflow import keras
 
 
 # %%
-def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altura, manter_proporcao=False):
+def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altura):
     """
     Redimensiona uma imagem usando OpenCV
     
@@ -19,7 +19,6 @@ def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altu
         caminho_saida (str): Caminho onde salvar a imagem redimensionada
         nova_largura (int): Nova largura desejada
         nova_altura (int): Nova altura desejada
-        manter_proporcao (bool): Se True, mantém a proporção original
     
     Returns:
         bool: True se sucesso, False se erro
@@ -35,12 +34,6 @@ def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altu
         # Obter dimensões originais
         altura_original, largura_original = imagem.shape[:2]
         print(f"Dimensões originais: {largura_original}x{altura_original}")
-        
-        if manter_proporcao:
-            # Calcular nova dimensão mantendo a proporção
-            ratio = min(nova_largura / largura_original, nova_altura / altura_original)
-            nova_largura = int(largura_original * ratio)
-            nova_altura = int(altura_original * ratio)
         
         print(f"Novas dimensões: {nova_largura}x{nova_altura}")
         
@@ -87,9 +80,8 @@ def redimensionar_multiplas_imagens(pasta_entrada, pasta_saida, largura, altura)
             print(f"\nProcessando: {arquivo}")
             redimensionar_imagem(caminho_entrada, caminho_saida, largura, altura)
 
-#%%
 ### Primeira etapa: redimensionar imagens
-# 
+#%%
 state_farm_train = 'datasets/State_farm/imgs/train'
 pastas = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
 for i in pastas:
@@ -97,8 +89,10 @@ for i in pastas:
 #%%
 state_farm_test = 'datasets/State_farm/imgs/test'
 redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=f'{state_farm_test}/redimensionada', largura=80, altura=80)
-#%%
+
 ### Segunda etapa: detectar faces e olhos
+#%%
+img_test = state_farm_test + '/redimensionada/img_1.jpg'
 #%%
 class HCC:
     def __init__(self):
@@ -106,17 +100,26 @@ class HCC:
         try:
             # Carregar os classificadores pré-treinados
             # Estes arquivos vêm com a instalação do OpenCV
-            self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-            self.smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
+            self.face_cascade1 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            self.face_cascade2 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt_tree.xml')
+            self.face_cascade3 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml')
+            self.face_cascade4 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
+            self.eye_cascade1 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+            self.eye_cascade2 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
             
             # Verificar se os classificadores foram carregados corretamente
-            if self.face_cascade.empty():
-                raise Exception("Erro ao carregar classificador de faces")
-            if self.eye_cascade.empty():
-                raise Exception("Erro ao carregar classificador de olhos")
-            if self.smile_cascade.empty():
-                print("Aviso: Classificador de sorriso não carregado")
+            if self.face_cascade1.empty():
+                raise Exception("Erro ao carregar classificador de faces1")
+            if self.face_cascade2.empty():
+                raise Exception("Erro ao carregar classificador de faces2")
+            if self.face_cascade3.empty():
+                raise Exception("Erro ao carregar classificador de faces3")
+            if self.face_cascade4.empty():
+                raise Exception("Erro ao carregar classificador de faces4")
+            if self.eye_cascade1.empty():
+                raise Exception("Erro ao carregar classificador de olhos1")
+            if self.eye_cascade2.empty():
+                raise Exception("Erro ao carregar classificador de olhos2")
                 
             print("Classificadores Haar Cascade carregados com sucesso!")
             
@@ -146,7 +149,7 @@ class HCC:
             # Converter para escala de cinza (necessário para Haar Cascade)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             
-            # Detectar faces
+            # Detectar faces // como usar multiplos classificadores?
             faces = self.face_cascade.detectMultiScale(
                 gray,
                 scaleFactor=1.1,    # Redução da escala a cada iteração
@@ -156,7 +159,6 @@ class HCC:
             )
             
             total_olhos = 0
-            total_sorrisos = 0
             
             print(f"Faces detectadas: {len(faces)}")
             
@@ -165,15 +167,11 @@ class HCC:
                 # Desenhar retângulo ao redor da face
                 cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
                 
-                # Adicionar label da face
-                cv2.putText(img, f'Face {i+1}', (x, y-10), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-                
                 # Região de interesse (ROI) para buscar olhos apenas dentro da face
                 roi_gray = gray[y:y+h, x:x+w]
                 roi_color = img[y:y+h, x:x+w]
                 
-                # Detectar olhos dentro da face
+                # Detectar olhos dentro da face // como usar multiplos classificadores?
                 eyes = self.eye_cascade.detectMultiScale(
                     roi_gray,
                     scaleFactor=1.1,
@@ -186,40 +184,9 @@ class HCC:
                 # Desenhar retângulos ao redor dos olhos
                 for (ex, ey, ew, eh) in eyes:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
-                    cv2.putText(roi_color, 'Olho', (ex, ey-5), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
                 
                 total_olhos += len(eyes)
                 
-                # Detectar sorrisos (opcional)
-                if not self.smile_cascade.empty():
-                    # Região inferior da face para detectar sorriso
-                    smile_roi = roi_gray[int(h/2):h, :]
-                    smiles = self.smile_cascade.detectMultiScale(
-                        smile_roi,
-                        scaleFactor=1.8,
-                        minNeighbors=20,
-                        minSize=(25, 25)
-                    )
-                    
-                    for (sx, sy, sw, sh) in smiles:
-                        # Ajustar coordenadas para a imagem completa
-                        sy += int(h/2)
-                        cv2.rectangle(roi_color, (sx, sy), (sx+sw, sy+sh), (0, 0, 255), 2)
-                        cv2.putText(roi_color, 'Sorriso', (sx, sy-5), 
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
-                    
-                    total_sorrisos += len(smiles)
-            
-            # Adicionar informações na imagem
-            info_text = f"Faces: {len(faces)} | Olhos: {total_olhos}"
-            if total_sorrisos > 0:
-                info_text += f" | Sorrisos: {total_sorrisos}"
-            
-            cv2.putText(img, info_text, (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            cv2.putText(img, info_text, (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1)
             
             # Salvar resultado se solicitado
             if salvar_resultado:
