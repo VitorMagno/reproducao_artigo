@@ -490,12 +490,12 @@ class preprocessamento_img:
         
         print(f"\nProcessamento concluído: {arquivos_processados} imagens melhoradas")
 #%%
-state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'enhanced')
+state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'redimensioned','enhanced')
 for i in pastas:
     entrada= os.path.join(state_farm_train, f'{i}')
     saida = os.path.join(state_farm_train, 'processed', f'{i}')
     preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=entrada, pasta_saida=saida, tipo_sharpening='unsharp_mask')
 #%%
-state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'enhanced')
+state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'redimensioned','enhanced')
 saida = os.path.join(state_farm_test, 'processed')
 preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=state_farm_test, pasta_saida=saida, tipo_sharpening='unsharp_mask')
