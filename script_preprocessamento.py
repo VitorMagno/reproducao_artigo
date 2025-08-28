@@ -142,8 +142,8 @@ class HCC:
                 faces = face_cascade.detectMultiScale(
                     gray,
                     scaleFactor=1.05,
-                    minNeighbors=2,
-                    minSize=(10, 10),
+                    minNeighbors=4,
+                    minSize=(5, 5),
                     flags=cv2.CASCADE_SCALE_IMAGE
                 )
                 face_detections.extend(faces)
@@ -167,7 +167,7 @@ class HCC:
                         roi_gray,
                         scaleFactor=1.05,
                         minNeighbors=2,
-                        minSize=(10, 10)
+                        minSize=(5, 5)
                     )
                     eye_detections.extend(eyes)
 
@@ -489,13 +489,17 @@ class preprocessamento_img:
                     print(f"✓ {arquivo} → {nome_saida}")
         
         print(f"\nProcessamento concluído: {arquivos_processados} imagens melhoradas")
+        return arquivos_processados
 #%%
 state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'redimensioned','enhanced')
+arquivos_totais = 0
 for i in pastas:
     entrada= os.path.join(state_farm_train, f'{i}')
     saida = os.path.join(state_farm_train, 'processed', f'{i}')
-    preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=entrada, pasta_saida=saida, tipo_sharpening='unsharp_mask')
+    arquivos_totais += preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=entrada, pasta_saida=saida, tipo_sharpening='unsharp_mask')
+print(f'Total de arquivos processados: {arquivos_totais}')
 #%%
 state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'redimensioned','enhanced')
 saida = os.path.join(state_farm_test, 'processed')
 preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=state_farm_test, pasta_saida=saida, tipo_sharpening='unsharp_mask')
+#%%
