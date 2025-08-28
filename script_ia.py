@@ -8,7 +8,7 @@ from tensorflow import keras
 ### Modelo 
 #%%
 
-def criar_modelo_cnn(input_shape=(224, 224, 3), task='drowsiness'):
+def custom_cnn(input_shape=(224, 224, 3), task='drowsiness'):
     """
     Cria modelo CNN com 3 blocos CNN + 1 bloco totalmente conectado
     
