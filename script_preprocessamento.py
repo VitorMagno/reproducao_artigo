@@ -104,6 +104,7 @@ class HCC:
             self.face_cascade2 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt_tree.xml')
             self.face_cascade3 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml')
             self.face_cascade4 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
+            self.face_cascade5 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
             self.eye_cascade1 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
             self.eye_cascade2 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
             
@@ -116,6 +117,8 @@ class HCC:
                 raise Exception("Erro ao carregar classificador de faces3")
             if self.face_cascade4.empty():
                 raise Exception("Erro ao carregar classificador de faces4")
+            if self.face_cascade5.empty():
+                raise Exception("Erro ao carregar classificador de faces5")
             if self.eye_cascade1.empty():
                 raise Exception("Erro ao carregar classificador de olhos1")
             if self.eye_cascade2.empty():
@@ -127,18 +130,18 @@ class HCC:
             print(f"Erro ao inicializar detectores: {e}")
             sys.exit(1)
     
-    def detectar_faces_olhos(self, imagem_path, output_folder, salvar_resultado=True):
+    def detectar_faces_olhos(self, imagem_path, output_folder, salvar_recortes=True):
         try:
             img = cv2.imread(imagem_path)
             if img is None:
                 print(f"Erro: Não foi possível carregar a imagem {imagem_path}")
-                return 0, 0, None
+                return 0, 0
 
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             # Detectores de face
             face_detections = []
-            for face_cascade in [self.face_cascade1, self.face_cascade2, self.face_cascade3, self.face_cascade4]:
+            for face_cascade in [self.face_cascade1, self.face_cascade2, self.face_cascade3, self.face_cascade4, self.face_cascade5]:
                 faces = face_cascade.detectMultiScale(
                     gray,
                     scaleFactor=1.05,
@@ -148,15 +151,37 @@ class HCC:
                 )
                 face_detections.extend(faces)
 
-            # Eliminar sobreposições usando groupRectangles (requer lista com pelo menos dois itens iguais)
-            faces_filtered, _ = cv2.groupRectangles(face_detections * 2, groupThreshold=1, eps=0.2)
+            # Eliminar sobreposições usando groupRectangles
+            if face_detections:
+                faces_filtered, _ = cv2.groupRectangles(face_detections * 2, groupThreshold=1, eps=0.2)
+            else:
+                faces_filtered = []
 
             total_olhos = 0
             print(f"Faces detectadas (após filtragem): {len(faces_filtered)}")
 
-            for i, (x, y, w, h) in enumerate(faces_filtered):
-                cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            # Nome base da imagem para criar arquivos únicos
+            nome_base = os.path.splitext(os.path.basename(imagem_path))[0]
+            
+            # Criar pastas para faces e olhos se não existirem
+            pasta_faces = os.path.join(output_folder, "faces")
+            pasta_olhos = os.path.join(output_folder, "olhos")
+            
+            if salvar_recortes:
+                if not os.path.exists(pasta_faces):
+                    os.makedirs(pasta_faces)
+                if not os.path.exists(pasta_olhos):
+                    os.makedirs(pasta_olhos)
 
+            for i, (x, y, w, h) in enumerate(faces_filtered):
+                # Recortar e salvar a face
+                if salvar_recortes:
+                    face_crop = img[y:y+h, x:x+w]
+                    face_filename = os.path.join(pasta_faces, f"{nome_base}_face_{i+1}.jpg")
+                    cv2.imwrite(face_filename, face_crop)
+                    print(f"Face {i+1} salva em: {face_filename}")
+
+                # Região da face em escala de cinza para detecção de olhos
                 roi_gray = gray[y:y+h, x:x+w]
                 roi_color = img[y:y+h, x:x+w]
 
@@ -172,43 +197,42 @@ class HCC:
                     eye_detections.extend(eyes)
 
                 # Remover sobreposição entre olhos detectados
-                eyes_filtered, _ = cv2.groupRectangles(eye_detections * 2, groupThreshold=1, eps=0.2)
+                if eye_detections:
+                    eyes_filtered, _ = cv2.groupRectangles(eye_detections * 2, groupThreshold=1, eps=0.2)
+                else:
+                    eyes_filtered = []
+                
                 print(f"  Olhos detectados na face {i+1}: {len(eyes_filtered)}")
 
-                for (ex, ey, ew, eh) in eyes_filtered:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
+                # Recortar e salvar cada olho
+                for j, (ex, ey, ew, eh) in enumerate(eyes_filtered):
+                    if salvar_recortes:
+                        eye_crop = roi_color[ey:ey+eh, ex:ex+ew]
+                        eye_filename = os.path.join(pasta_olhos, f"{nome_base}_face_{i+1}_olho_{j+1}.jpg")
+                        cv2.imwrite(eye_filename, eye_crop)
+                        print(f"    Olho {j+1} da face {i+1} salvo em: {eye_filename}")
 
                 total_olhos += len(eyes_filtered)
 
-            if salvar_resultado:
-                nome_base = os.path.splitext(os.path.basename(imagem_path))[0]
-                extensao = os.path.splitext(imagem_path)[1]
-                caminho_saida = os.path.join(output_folder, f"{nome_base}_detectado{extensao}")
-                cv2.imwrite(caminho_saida, img)
-                print(f"Imagem com detecções salva em: {caminho_saida}")
-
-            return len(faces_filtered), total_olhos, img
+            return len(faces_filtered), total_olhos
 
         except Exception as e:
             print(f"Erro durante a detecção: {e}")
-            return 0, 0, None
+            return 0, 0
         
 
 def enhance(image_path, output_folder):
-    """Recebe uma pasta para fazer a detecção de faces e olhos
+    """Recebe uma pasta para fazer a detecção de faces e olhos e salva os recortes
 
     Args:
         image_path (string): path to image folder
         output_folder (string): path to save processed images
 
-    Raises:
-        ValueError: _description_
-        ValueError: _description_
-
     Returns:
         output_folder: path to processed images
     """
     detector = HCC()
+    
     # Criar pasta de saída se não existir
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -216,15 +240,32 @@ def enhance(image_path, output_folder):
     # Extensões de imagem suportadas
     extensoes_validas = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')
     
+    # Contadores totais
+    total_faces = 0
+    total_olhos = 0
+    
     # Processar cada arquivo na pasta
     for arquivo in os.listdir(image_path):
         if arquivo.lower().endswith(extensoes_validas):
             caminho_entrada = os.path.join(image_path, arquivo)
-            caminho_saida = output_folder
             
             print(f"\nProcessando: {arquivo}")
-            detector.detectar_faces_olhos(imagem_path=caminho_entrada, output_folder=caminho_saida, salvar_resultado=True)
-    return caminho_saida
+            faces_detectadas, olhos_detectados = detector.detectar_faces_olhos(
+                imagem_path=caminho_entrada, 
+                output_folder=output_folder, 
+                salvar_recortes=True
+            )
+            
+            total_faces += faces_detectadas
+            total_olhos += olhos_detectados
+    
+    print(f"\n=== RESUMO FINAL ===")
+    print(f"Total de faces detectadas e salvas: {total_faces}")
+    print(f"Total de olhos detectados e salvos: {total_olhos}")
+    print(f"Recortes salvos em:")
+    print(f"  - Faces: {os.path.join(output_folder, 'faces')}")
+    print(f"  - Olhos: {os.path.join(output_folder, 'olhos')}")
+    return 
 # #%%
 # img_test = state_farm_test + '/redimensionada/img_1.jpg'
 # #%%
