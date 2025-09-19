@@ -6,6 +6,7 @@ import numpy as np
 from typing import Tuple, Optional
 import matplotlib.pyplot as plt
 
+### Primeira etapa: redimensionar imagens
 # %%
 def redimensionar_imagem(caminho_entrada, caminho_saida, nova_largura, nova_altura):
     """
@@ -77,21 +78,11 @@ def redimensionar_multiplas_imagens(pasta_entrada, pasta_saida, largura, altura)
             print(f"\nProcessando: {arquivo}")
             redimensionar_imagem(caminho_entrada, caminho_saida, largura, altura)
 
-### Primeira etapa: redimensionar imagens
-#%%
-state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train')
-#%%
-pastas = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
-#%%
-for i in pastas:
-    entrada = os.path.join(state_farm_train, f'{i}')
-    saida = os.path.join(state_farm_train, 'redimensioned', f'{i}')
-    redimensionar_multiplas_imagens(pasta_entrada=entrada, pasta_saida=saida, largura=80, altura=80)
-#%%
-state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test')
-saida = os.path.join(state_farm_test, 'redimensioned')
-#%%
-redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=saida, largura=80, altura=80)
+
+
+
+
+
 ### Segunda etapa: detectar faces e olhos
 #%%
 class HCC:
@@ -266,23 +257,12 @@ def enhance(image_path, output_folder):
     print(f"  - Faces: {os.path.join(output_folder, 'faces')}")
     print(f"  - Olhos: {os.path.join(output_folder, 'olhos')}")
     return 
-# #%%
-# img_test = state_farm_test + '/redimensionada/img_1.jpg'
-# #%%
-# HCC().detectar_faces_olhos(imagem_path=img_test, output_folder='./')
-#%%
-#%%
-state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'redimensioned')
-#%%
-for i in pastas:
-    entrada = os.path.join(state_farm_train, f'{i}')
-    saida = os.path.join(state_farm_train, 'enhanced', f'{i}')
-    enhance(entrada, saida)                            
-#%%
-state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'redimensioned')
-saida = os.path.join(state_farm_test, 'enhanced')
-enhance(state_farm_test, saida)
-#%%
+
+
+
+
+
+
 ### terceira etapa: preprocessar as regiões de interesse
 #%%
 class preprocessamento_img:
@@ -531,16 +511,48 @@ class preprocessamento_img:
         
         print(f"\nProcessamento concluído: {arquivos_processados} imagens melhoradas")
         return arquivos_processados
+    
+    
+#%% define pipeline    
 #%%
-state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'redimensioned','enhanced')
-arquivos_totais = 0
-for i in pastas:
-    entrada= os.path.join(state_farm_train, f'{i}')
-    saida = os.path.join(state_farm_train, 'processed', f'{i}')
-    arquivos_totais += preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=entrada, pasta_saida=saida, tipo_sharpening='unsharp_mask')
-print(f'Total de arquivos processados: {arquivos_totais}')
+def preprocessamento_state_farm():
+    pastas = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
+    ## redimensionamento
+
+    
+    # ### redimensiona pasta treino
+    # state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train')
+    # for i in pastas:
+    #     entrada = os.path.join(state_farm_train, f'{i}')
+    #     saida = os.path.join(state_farm_train, 'redimensioned', f'{i}')
+    #     redimensionar_multiplas_imagens(pasta_entrada=entrada, pasta_saida=saida, largura=80, altura=80)
+    
+    # ### redimensiona pasta teste
+    # state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test')
+    # saida = os.path.join(state_farm_test, 'redimensioned')
+    # redimensionar_multiplas_imagens(pasta_entrada=state_farm_test, pasta_saida=saida, largura=80, altura=80)
+    
+    ## aplica filtros para aprimorar as imagens
+    state_farm_train = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','train', 'redimensioned')
+    arquivos_totais = 0
+    
+    ### aplica filtros na pasta treino
+    for i in pastas:
+        entrada= os.path.join(state_farm_train, f'{i}')
+        saida = os.path.join(state_farm_train, 'processed', f'{i}')
+        arquivos_totais += preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=entrada, pasta_saida=saida, tipo_sharpening='unsharp_mask')
+    print(f'Total de arquivos processados: {arquivos_totais}')
+    ### aplica filtros na pasta teste
+    state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'redimensioned')
+    saida = os.path.join(state_farm_test, 'processed')
+    preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=state_farm_test, pasta_saida=saida, tipo_sharpening='unsharp_mask')
+    
+def preprocessamento_dd_dataset():
+    pass
+
+
+## executa pipeline
 #%%
-state_farm_test = os.path.join('datasets','state-farm-distracted-driver-detection','imgs','test', 'redimensioned','enhanced')
-saida = os.path.join(state_farm_test, 'processed')
-preprocessamento_img().aplicar_melhorias_lote(pasta_entrada=state_farm_test, pasta_saida=saida, tipo_sharpening='unsharp_mask')
-#%%
+# preprocessamento_dd_dataset()
+preprocessamento_state_farm()
+# %%
