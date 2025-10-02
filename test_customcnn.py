@@ -41,3 +41,7 @@ def test_custom_model(model_path, task, dataset_path, max_images_per_class=None)
 if __name__ == "__main__":
     test_custom_model(
         model_path='best_custom_model.h5',
+        task='drowsiness',  # ou 'distraction'
+        dataset_path='driver_drowsiness_dataset',
+        max_images_per_class=100  # opcional
+    )
