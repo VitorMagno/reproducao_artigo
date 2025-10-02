@@ -1,0 +1,52 @@
+import tensorflow as tf
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from tensorflow.keras.optimizers import Adam
+
+def build_model(task_type="distraction", input_shape=(224, 224, 3)):
+    """
+    Cria um modelo de classificação com VGG16 congelada para duas tarefas:
+    - 'distraction': classificação com 10 classes
+    - 'drowsiness': classificação binária (probabilidade de sonolento)
+
+    Parâmetros:
+        task_type (str): 'distraction' ou 'drowsiness'
+        input_shape (tuple): shape da imagem de entrada
+
+    Retorna:
+        modelo Keras compilado
+    """
+
+    # Carrega VGG16 sem a top layer
+    base_model = VGG16(weights='imagenet', include_top=False, input_shape=input_shape)
+    base_model.trainable = False  # Congela as camadas da VGG16
+
+    # Adiciona as camadas customizadas
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    x = Dropout(0.5)(x)
+
+    if task_type == "distraction":
+        output = Dense(10, activation='softmax', name='distraction_output')(x)
+        loss = 'sparse_categorical_crossentropy'
+        metrics = ['accuracy']
+    elif task_type == "drowsiness":
+        output = Dense(1, activation='sigmoid', name='drowsiness_output')(x)
+        loss = 'binary_crossentropy'
+        metrics = ['accuracy']
+    else:
+        raise ValueError("task_type deve ser 'distraction' ou 'drowsiness'.")
+
+    # Constrói e compila o modelo
+    model = Model(inputs=base_model.input, outputs=output)
+    model.compile(optimizer=Adam(learning_rate=1e-4), loss=loss, metrics=metrics)
+
+    return model
+
+
+# ===== Exemplo de uso =====
+if __name__ == "__main__":
+    task = ['distraction', 'drowsiness']
+    model = build_model(task_type=task[0])
+    model.summary()
