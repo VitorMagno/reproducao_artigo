@@ -1,9 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import classification_report
-from resnet_model import build_model
-from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
-
+from resnet50 import build_model
+from data_loader import load_state_farm_data, load_drowsiness_data
 
 def test_resnet50_model(model_path, task, dataset_path, max_images_per_class=None):
     print(f"\n=== TESTE - RESNET50 ({task.upper()}) ===")
@@ -15,7 +14,6 @@ def test_resnet50_model(model_path, task, dataset_path, max_images_per_class=Non
     else:
         raise ValueError("task deve ser 'drowsiness' ou 'distraction'")
 
-    _, _, X_test, y_test = prepare_data_for_training(X_train, y_train, X_test, y_test, task)
 
     model = tf.keras.models.load_model(model_path)
 

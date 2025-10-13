@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from resnet50 import build_model
-from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
+from data_loader import load_state_farm_data, load_drowsiness_data
 
 
 def train_resnet50(task, dataset_path, epochs=50, batch_size=32, model_save_path=None, max_images_per_class=None):
@@ -17,7 +17,6 @@ def train_resnet50(task, dataset_path, epochs=50, batch_size=32, model_save_path
     else:
         raise ValueError("task deve ser 'drowsiness' ou 'distraction'")
 
-    X_train, y_train, X_test, y_test = prepare_data_for_training(X_train, y_train, X_test, y_test, task)
 
     input_shape = X_train.shape[1:]
     model = build_model(task_type=task, input_shape=input_shape)
