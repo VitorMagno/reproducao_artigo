@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import classification_report
-from custom_cnn_model import custom_cnn
+from custom_cnn import custom_cnn
 from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
 
 

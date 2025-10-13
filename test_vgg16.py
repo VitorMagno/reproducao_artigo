@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics import classification_report
-from vgg_model import build_model
+from vgg16 import build_model
 from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
 
 

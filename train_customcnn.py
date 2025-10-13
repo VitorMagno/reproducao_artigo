@@ -1,3 +1,9 @@
+import os
+import numpy as np
+import cv2
+import tensorflow as tf
+from custom_cnn import custom_cnn
+from sklearn.model_selection import train_test_split
 def load_state_farm_data(dataset_path, max_images_per_class=None):
     """
     Carrega o dataset State Farm (10 classes de distração) que já tem divisão train/test

@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras.applications import VGG16
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from tensorflow.keras.optimizers import Adam
+from tensorflow.python.keras.models import VGG16
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from tensorflow.python.keras.optimizers import Adam
 
 def build_model(task_type="distraction", input_shape=(224, 224, 3)):
     """

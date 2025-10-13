@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from tensorflow.keras.optimizers import Adam
+from tensorflow.python.keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from tensorflow.python.keras.models import ResNet50
+from tensorflow.python.keras.optimizers import Adam
+from tensorflow.python.keras.models import Model
 
 def build_model(task_type="distraction", input_shape=(224, 224, 3)):
     """
@@ -17,7 +17,7 @@ def build_model(task_type="distraction", input_shape=(224, 224, 3)):
     Retorna:
         modelo Keras compilado
     """
-
+    
     # Importa ResNet50 sem a top layer (fully-connected)
     base_model = ResNet50(weights='imagenet', include_top=False, input_shape=input_shape)
     base_model.trainable = False  # Congela todas as camadas da ResNet50

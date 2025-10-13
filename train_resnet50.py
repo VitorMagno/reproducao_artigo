@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from resnet_model import build_model  # <- função build_model(task, input_shape) com ResNet50
+from resnet50 import build_model
 from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
 
 

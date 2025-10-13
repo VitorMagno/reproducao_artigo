@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from vgg_model import build_model  # <- função build_model(task, input_shape) com VGG16
+from vgg16 import build_model  # <- função build_model(task, input_shape) com VGG16
 from data_loader import load_state_farm_data, load_drowsiness_data, prepare_data_for_training
 
 
