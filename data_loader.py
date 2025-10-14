@@ -65,6 +65,8 @@ def load_state_farm_data(dataset_path, max_images_per_class=None):
     print(f"State Farm - Treino: {X_train.shape}, Teste: {X_test.shape}")
     
     return X_train, y_train, X_test, y_test
+
+
 def load_drowsiness_data(dataset_path, test_size=0.2, random_state=42, max_images_per_class=None):
     """
     Carrega o dataset de sonolência e faz divisão treino/teste
