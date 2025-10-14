@@ -83,7 +83,7 @@ def load_drowsiness_data(dataset_path, test_size=0.2, random_state=42, max_image
     labels = []
     
     # Carregar imagens drowsy (classe 1)
-    drowsy_path = os.path.join(dataset_path, 'drowsy')
+    drowsy_path = os.path.join(dataset_path, 'Drowsy')
     print(f"Carregando imagens drowsy de {drowsy_path}")
     
     drowsy_files = [f for f in os.listdir(drowsy_path) 
@@ -108,7 +108,7 @@ def load_drowsiness_data(dataset_path, test_size=0.2, random_state=42, max_image
     print(f"  -> {drowsy_loaded} imagens drowsy carregadas")
     
     # Carregar imagens not_drowsy (classe 0)
-    not_drowsy_path = os.path.join(dataset_path, 'not_drowsy')
+    not_drowsy_path = os.path.join(dataset_path, 'Non Drowsy')
     print(f"Carregando imagens not_drowsy de {not_drowsy_path}")
     
     not_drowsy_files = [f for f in os.listdir(not_drowsy_path) 
